@@ -1,41 +1,61 @@
-name: Build Flutter APK
+name: Build Flutter APK and Create Release
 
 on:
   push:
     tags:
-      - "v*"
+      - "v*" # Runs only when a tag starting with 'v' is pushed (e.g., v1.0.0)
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    
+    # FIX for 403 Error: Grant explicit permission to write releases
     permissions:
-      contents: write
+      contents: write 
 
     steps:
-      - name: Checkout project
-        uses: actions/checkout@v3
+      - name: ⬇️ Checkout project
+        uses: actions/checkout@v4 # Updated to the latest v4
 
-      - name: Install Flutter
+      - name: ⚙️ Install Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.38.2"
+          # Consider using 'stable' to let the action manage the version,
+          # or keep your specific version:
+          flutter-version: "3.24.0" 
 
-      - name: Install dependencies
+      - name: 📦 Install dependencies
         run: flutter pub get
 
-      - name: Build APK
+      - name: 🏗️ Build Release APK
         run: flutter build apk --release
 
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
+      # 1. Store the APK as an artifact for easy download from the Actions tab
+      - name: ⬆️ Upload APK artifact
+        # FIX for deprecation: Updated to the current major version v4
+        uses: actions/upload-artifact@v4 
         with:
           name: app-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+          # Recommended for v4 to manage storage usage
+          retention-days: 7 
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+      # 2. Attach the APK to the actual GitHub Release
+      - name: 📝 Create GitHub Release
+        # Using softprops/action-gh-release@v2, the current stable version
+        uses: softprops/action-gh-release@v2 
         with:
+          # Use ${{ github.ref_name }} to automatically get the tag name (e.g., v1.0.2)
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body: |
+            ## 🎉 New Release: ${{ github.ref_name }}
+            
+            Find the APK attached below for installation.
+          draft: false
+          prerelease: false
+          # The file path to attach to the release
           files: build/app/outputs/flutter-apk/app-release.apk
         env:
+          # Uses the GITHUB_TOKEN which now has 'contents: write' permission
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
