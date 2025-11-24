@@ -22,7 +22,7 @@ jobs:
         with:
           # Consider using 'stable' to let the action manage the version,
           # or keep your specific version:
-          flutter-version: "3.24.0" 
+          flutter-version: "3.38.2" 
 
       - name: 📦 Install dependencies
         run: flutter pub get
